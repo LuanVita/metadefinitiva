@@ -1,0 +1,591 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LuanOS 9.2 | Executive System AI</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0f172a; /* Slate 900 */
+            background-image: radial-gradient(at 0% 0%, hsla(253,16%,7%,1) 0, transparent 50%), radial-gradient(at 50% 0%, hsla(225,39%,30%,1) 0, transparent 50%), radial-gradient(at 100% 0%, hsla(339,49%,30%,1) 0, transparent 50%);
+            color: #e2e8f0;
+            overflow: hidden;
+        }
+
+        /* Glassmorphism */
+        .glass-panel {
+            background: rgba(30, 41, 59, 0.7);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .glass-sidebar {
+            background: rgba(15, 23, 42, 0.9);
+            backdrop-filter: blur(10px);
+            border-right: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        /* Utilities */
+        .premium-shadow { box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3), 0 4px 6px -2px rgba(0, 0, 0, 0.2); }
+        .nav-item.active { background: rgba(139, 92, 246, 0.15); color: #c084fc; border-left: 3px solid #c084fc; }
+        .fade-in { animation: fadeIn 0.3s ease-in-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* Chart Animations */
+        .chart-line { fill: none; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; filter: drop-shadow(0 0 4px rgba(16, 185, 129, 0.5)); transition: d 1s ease; }
+        .chart-grid { stroke: rgba(255,255,255,0.05); stroke-width: 1; }
+        .chart-target { stroke-dasharray: 4,4; stroke-width: 2; opacity: 0.6; }
+        .chart-dot { fill: #0f172a; stroke-width: 2; r: 4; transition: all 0.3s; cursor: pointer; }
+        .chart-dot:hover { r: 6; }
+
+        /* Scrollbar */
+        .content-area { overflow-y: auto; height: 100vh; }
+        .content-area::-webkit-scrollbar { width: 6px; }
+        .content-area::-webkit-scrollbar-track { background: #1e293b; }
+        .content-area::-webkit-scrollbar-thumb { background: #475569; border-radius: 4px; }
+
+        /* Chat Styles */
+        .chat-bubble { max-width: 80%; padding: 12px 16px; border-radius: 12px; font-size: 0.9rem; line-height: 1.5; animation: fadeIn 0.3s ease; margin-bottom: 8px; }
+        .chat-user { background: #4f46e5; color: white; margin-left: auto; border-bottom-right-radius: 2px; }
+        .chat-ai { background: rgba(30, 41, 59, 0.8); border: 1px solid rgba(255,255,255,0.1); color: #e2e8f0; margin-right: auto; border-bottom-left-radius: 2px; }
+        .chat-loading span { width: 6px; height: 6px; background: #a855f7; border-radius: 50%; display: inline-block; animation: bounce 1.4s infinite ease-in-out both; margin: 0 1px; }
+        .chat-loading span:nth-child(1) { animation-delay: -0.32s; }
+        .chat-loading span:nth-child(2) { animation-delay: -0.16s; }
+        @keyframes bounce { 0%, 80%, 100% { transform: scale(0); } 40% { transform: scale(1); } }
+    </style>
+</head>
+<body class="flex h-screen w-full">
+
+    <!-- SIDEBAR -->
+    <aside class="w-20 lg:w-64 glass-sidebar flex flex-col justify-between z-20 transition-all duration-300">
+        <div>
+            <div class="p-6 flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-600 to-blue-600 flex items-center justify-center shadow-lg shadow-purple-900/50">
+                    <i class="fas fa-cube text-white text-lg"></i>
+                </div>
+                <div class="hidden lg:block">
+                    <h1 class="font-bold text-white tracking-tight leading-none">LuanOS</h1>
+                    <span class="text-[10px] text-slate-400 uppercase tracking-widest">Ver 9.2</span>
+                </div>
+            </div>
+            <nav class="mt-6 space-y-1 px-2">
+                <button onclick="switchTab('dashboard')" class="nav-item active w-full flex items-center gap-4 px-4 py-3 text-slate-400 hover:text-white hover:bg-white/5 rounded-lg transition-all group">
+                    <i class="fas fa-chart-pie w-6 text-center group-hover:text-purple-400"></i><span class="hidden lg:block text-sm font-medium">Dashboard</span>
+                </button>
+                <button onclick="switchTab('career')" class="nav-item w-full flex items-center gap-4 px-4 py-3 text-slate-400 hover:text-white hover:bg-white/5 rounded-lg transition-all group">
+                    <i class="fas fa-building w-6 text-center group-hover:text-indigo-400"></i><span class="hidden lg:block text-sm font-medium">Carreira V4</span>
+                </button>
+                <button onclick="switchTab('freelance')" class="nav-item w-full flex items-center gap-4 px-4 py-3 text-slate-400 hover:text-white hover:bg-white/5 rounded-lg transition-all group">
+                    <i class="fas fa-rocket w-6 text-center group-hover:text-emerald-400"></i><span class="hidden lg:block text-sm font-medium">Agência CRM</span>
+                </button>
+                <button onclick="switchTab('english')" class="nav-item w-full flex items-center gap-4 px-4 py-3 text-slate-400 hover:text-white hover:bg-white/5 rounded-lg transition-all group">
+                    <i class="fas fa-language w-6 text-center group-hover:text-pink-400"></i><span class="hidden lg:block text-sm font-medium">Jornada Inglês</span>
+                </button>
+                <button onclick="switchTab('schedule')" class="nav-item w-full flex items-center gap-4 px-4 py-3 text-slate-400 hover:text-white hover:bg-white/5 rounded-lg transition-all group">
+                    <i class="fas fa-calendar-alt w-6 text-center group-hover:text-blue-400"></i><span class="hidden lg:block text-sm font-medium">Rotina</span>
+                </button>
+                <button onclick="switchTab('mentor')" class="nav-item w-full flex items-center gap-4 px-4 py-3 text-slate-400 hover:text-white hover:bg-white/5 rounded-lg transition-all group mt-4 border border-purple-500/20 bg-purple-500/5">
+                    <i class="fas fa-robot w-6 text-center text-purple-400 animate-pulse"></i><span class="hidden lg:block text-sm font-medium text-purple-200">Mentor IA</span>
+                </button>
+            </nav>
+        </div>
+        <div class="p-4 border-t border-white/5">
+            <div class="flex gap-2 justify-center lg:justify-start px-2 mb-3">
+                <button onclick="exportData()" title="Backup" class="text-slate-500 hover:text-white"><i class="fas fa-download"></i></button>
+                <button onclick="document.getElementById('importInput').click()" title="Restaurar" class="text-slate-500 hover:text-white"><i class="fas fa-upload"></i></button>
+                <input type="file" id="importInput" class="hidden" accept=".json" onchange="importData(this)">
+            </div>
+            <div class="flex items-center gap-3 cursor-pointer hover:bg-white/5 p-2 rounded-lg transition-colors" onclick="document.getElementById('profileUpload').click()">
+                <div id="profileDisplay" class="w-10 h-10 rounded-full bg-slate-700 overflow-hidden border border-purple-500/50 flex items-center justify-center flex-shrink-0"><i class="fas fa-user text-slate-400"></i></div>
+                <div class="hidden lg:block overflow-hidden"><p class="text-sm font-bold text-white truncate">Luan Vita</p><p class="text-xs text-slate-400 truncate">CEO of Me Inc.</p></div>
+                <input type="file" id="profileUpload" class="hidden" accept="image/*" onchange="uploadProfile(this)">
+            </div>
+        </div>
+    </aside>
+
+    <!-- MAIN CONTENT -->
+    <main class="flex-1 content-area relative">
+        <div class="max-w-7xl mx-auto p-6 lg:p-10 pb-20">
+
+            <!-- TAB 1: DASHBOARD -->
+            <div id="tab-dashboard" class="fade-in space-y-6">
+                <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-2">
+                    <div><h2 class="text-2xl font-bold text-white">Visão Geral</h2><p class="text-slate-400 text-sm">Monitoramento Financeiro 2026</p></div>
+                    <div class="glass-panel px-4 py-2 rounded-full text-xs text-indigo-300 border border-indigo-500/30"><i class="fas fa-satellite-dish animate-pulse mr-2"></i>Sistema Online</div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <!-- Income -->
+                    <div class="glass-panel p-6 rounded-2xl relative overflow-hidden group">
+                        <div class="absolute -right-6 -top-6 w-24 h-24 bg-purple-500/20 rounded-full blur-2xl group-hover:bg-purple-500/30 transition-all"></div>
+                        <h3 class="text-slate-400 text-xs font-medium uppercase tracking-wider mb-2">Renda Mensal Total</h3>
+                        <div class="flex items-baseline gap-1"><span class="text-3xl font-bold text-white tracking-tight" id="totalIncomeDisplay">R$ 0,00</span><span class="text-slate-500 text-sm">/ R$ 9k</span></div>
+                        <div class="mt-4">
+                            <div class="flex justify-between text-xs mb-1"><span class="text-purple-400 font-medium">Progresso</span><span id="incomePercentage" class="text-white">0%</span></div>
+                            <div class="w-full bg-slate-700 h-1.5 rounded-full overflow-hidden"><div id="incomeBar" class="h-full bg-gradient-to-r from-purple-600 to-blue-500" style="width: 0%"></div></div>
+                        </div>
+                    </div>
+                    <!-- V4 Goal -->
+                    <div class="glass-panel p-6 rounded-2xl relative overflow-hidden group">
+                        <div class="absolute -right-6 -top-6 w-24 h-24 bg-indigo-500/20 rounded-full blur-2xl group-hover:bg-indigo-500/30 transition-all"></div>
+                        <h3 class="text-slate-400 text-xs font-medium uppercase tracking-wider mb-2">Meta V4 Company</h3>
+                        <div class="flex items-baseline gap-1"><span class="text-3xl font-bold text-white tracking-tight" id="v4SalaryDisplay">R$ 3.700</span><span class="text-slate-500 text-sm">/ R$ 6k</span></div>
+                         <div class="mt-4">
+                            <div class="flex justify-between text-xs mb-1"><span class="text-indigo-400 font-medium">Escalada</span><span id="v4Percentage" class="text-white">0%</span></div>
+                            <div class="w-full bg-slate-700 h-1.5 rounded-full overflow-hidden"><div id="v4Bar" class="h-full bg-gradient-to-r from-indigo-600 to-cyan-500" style="width: 0%"></div></div>
+                        </div>
+                    </div>
+                    <!-- Investment -->
+                    <div class="glass-panel p-6 rounded-2xl relative overflow-hidden group">
+                        <div class="absolute -right-6 -top-6 w-24 h-24 bg-emerald-500/20 rounded-full blur-2xl group-hover:bg-emerald-500/30 transition-all"></div>
+                        <h3 class="text-slate-400 text-xs font-medium uppercase tracking-wider mb-2">Patrimônio Investido</h3>
+                        <div class="flex items-baseline gap-1"><span class="text-3xl font-bold text-white tracking-tight" id="investAmount">R$ 8.500</span><span class="text-slate-500 text-sm">/ R$ 22k</span></div>
+                        <div class="mt-4 flex gap-2">
+                             <div class="flex-1 bg-slate-800/50 rounded h-8 flex items-center px-2 border border-slate-700/50"><input type="number" id="investInput" placeholder="+ Aporte" class="bg-transparent w-full text-xs text-white focus:outline-none appearance-none"></div>
+                             <button onclick="addInvest()" class="h-8 w-8 bg-emerald-600 hover:bg-emerald-500 rounded flex items-center justify-center text-white transition-colors"><i class="fas fa-plus text-xs"></i></button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- CHART ROW -->
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <!-- SVG Chart (PANORAMIC) -->
+                    <div class="lg:col-span-2 glass-panel p-6 rounded-2xl flex flex-col justify-between">
+                        <div class="mb-4 flex justify-between items-center">
+                            <div><h3 class="text-white font-bold flex items-center gap-2"><i class="fas fa-chart-line text-indigo-400"></i> Tendência Financeira</h3><p class="text-xs text-slate-400">Atualiza em tempo real.</p></div>
+                            <div class="text-xs flex gap-3"><div class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-emerald-500"></span> Atual</div><div class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-slate-500"></span> Futuro</div></div>
+                        </div>
+                        <div class="relative h-64 w-full">
+                            <svg class="w-full h-full" viewBox="0 0 800 256" preserveAspectRatio="none">
+                                <line x1="0" y1="230" x2="800" y2="230" class="chart-grid" /> <!-- 0k -->
+                                <line x1="0" y1="130" x2="800" y2="130" class="chart-grid" /> <!-- ~5k -->
+                                <line x1="0" y1="30" x2="800" y2="30" class="chart-grid" /> <!-- 10k -->
+                                <line x1="0" y1="50" x2="800" y2="50" class="chart-target" stroke="#ef4444" /> 
+                                <text x="790" y="46" text-anchor="end" fill="#ef4444" font-size="10" opacity="0.8">R$9k</text>
+                                <line x1="0" y1="110" x2="800" y2="110" class="chart-target" stroke="#6366f1" />
+                                <text x="790" y="106" text-anchor="end" fill="#6366f1" font-size="10" opacity="0.8">R$6k</text>
+                                <path id="incomeTrendLine" d="" class="chart-line" stroke="#10b981" />
+                                <g id="chartDots"></g>
+                                <text x="50" y="250" fill="#64748b" font-size="10" text-anchor="middle">JAN</text>
+                                <text x="225" y="250" fill="#64748b" font-size="10" text-anchor="middle">ABR</text>
+                                <text x="400" y="250" fill="#64748b" font-size="10" text-anchor="middle">JUL</text>
+                                <text x="575" y="250" fill="#64748b" font-size="10" text-anchor="middle">OUT</text>
+                                <text x="750" y="250" fill="#64748b" font-size="10" text-anchor="middle">DEZ</text>
+                            </svg>
+                        </div>
+                    </div>
+
+                    <!-- Widgets -->
+                    <div class="lg:col-span-1 space-y-6">
+                        <!-- Weight -->
+                        <div class="glass-panel p-5 rounded-2xl flex items-center gap-4 relative overflow-hidden group">
+                            <div class="absolute right-0 top-0 h-full w-1 bg-cyan-500"></div>
+                            <div class="w-12 h-12 rounded-full bg-cyan-500/10 flex items-center justify-center text-cyan-400 text-xl font-bold shrink-0"><i class="fas fa-weight-scale"></i></div>
+                            <div class="flex-1 w-full">
+                                 <div class="flex justify-between items-center mb-1"><p class="text-xs text-slate-400 uppercase">Bio-Metria</p><span class="text-[10px] text-cyan-400 font-bold" id="weightPct">0%</span></div>
+                                 <div class="flex items-center justify-between mb-2">
+                                     <div class="flex items-baseline gap-1"><span class="text-2xl font-bold text-white" id="weightDisplay">90.0</span><span class="text-xs text-slate-500">kg</span></div>
+                                     <div class="flex gap-1"><button onclick="changeWeight(0.1)" class="w-6 h-6 rounded bg-slate-700 hover:bg-slate-600 text-white flex items-center justify-center text-xs transition-colors"><i class="fas fa-plus"></i></button><button onclick="changeWeight(-0.1)" class="w-6 h-6 rounded bg-slate-700 hover:bg-slate-600 text-white flex items-center justify-center text-xs transition-colors"><i class="fas fa-minus"></i></button></div>
+                                 </div>
+                                 <div class="w-full bg-slate-700 h-1.5 rounded-full overflow-hidden"><div id="weightBar" class="h-full bg-cyan-500 transition-all duration-500" style="width: 0%"></div></div>
+                                 <p class="text-[9px] text-slate-500 mt-1 text-right">Meta: 74kg</p>
+                            </div>
+                        </div>
+                        <!-- English -->
+                        <div class="glass-panel p-5 rounded-2xl flex items-center gap-4 relative overflow-hidden group">
+                             <div class="absolute right-0 top-0 h-full w-1 bg-pink-500"></div>
+                             <div class="w-12 h-12 rounded-full bg-pink-500/10 flex items-center justify-center text-pink-400 text-xl font-bold shrink-0"><i class="fas fa-flag-usa"></i></div>
+                             <div><p class="text-xs text-slate-400 uppercase">Nível Inglês</p><h3 class="text-2xl font-bold text-white" id="dashEnglishLevel">A1</h3><p class="text-[10px] text-pink-400" id="dashEnglishNext">Próximo: A2</p></div>
+                        </div>
+                        <!-- CRM -->
+                        <div class="glass-panel p-5 rounded-2xl flex items-center gap-4 relative overflow-hidden group">
+                            <div class="absolute right-0 top-0 h-full w-1 bg-emerald-500"></div>
+                            <div class="w-12 h-12 rounded-full bg-emerald-500/10 flex items-center justify-center text-emerald-400 text-xl font-bold shrink-0"><i class="fas fa-users"></i></div>
+                            <div><p class="text-xs text-slate-400 uppercase">Carteira</p><h3 class="text-2xl font-bold text-white" id="activeClientsCount">0</h3><p class="text-[10px] text-emerald-400" id="mrrDash">MRR: R$ 0,00</p></div>
+                       </div>
+                        <!-- Promo Widget -->
+                       <div class="glass-panel p-5 rounded-2xl flex items-center gap-4 relative overflow-hidden group">
+                            <div class="absolute right-0 top-0 h-full w-1 bg-yellow-500"></div>
+                            <div class="w-12 h-12 rounded-full bg-yellow-500/10 flex items-center justify-center text-yellow-400 text-xl font-bold shrink-0"><i class="fas fa-chart-line"></i></div>
+                            <div><p class="text-xs text-slate-400 uppercase tracking-wide">Chance Promoção</p><h3 class="text-2xl font-bold text-white" id="dashPromoChance">0%</h3><p class="text-[10px] text-yellow-400">Baseado em Certs</p></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB 2: CAREER V4 (RESTORED TO ORIGINAL LAYOUT) -->
+            <div id="tab-career" class="hidden fade-in space-y-6">
+                <h2 class="text-2xl font-bold text-white mb-6">Escalada Corporativa <span class="text-indigo-400">V4 Company</span></h2>
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <div class="lg:col-span-2 glass-panel p-6 rounded-2xl border-l-4 border-indigo-500">
+                        <h3 class="font-bold text-white mb-6 flex items-center gap-2"><i class="fas fa-route text-indigo-400"></i> Roadmap 2026</h3>
+                         <div class="space-y-4 relative ml-2">
+                             <div class="absolute left-3.5 top-2 bottom-2 w-0.5 bg-slate-800"></div>
+                             <div id="careerStepsContainer"></div>
+                         </div>
+                    </div>
+                    <div class="lg:col-span-1 glass-panel p-6 rounded-2xl">
+                        <h3 class="font-bold text-white mb-4 flex items-center gap-2"><i class="fas fa-certificate text-yellow-500"></i> Certificações</h3>
+                        <div id="certContainer" class="space-y-3"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB 3: FREELANCE CRM (UPDATED WITH INTELLIGENCE) -->
+            <div id="tab-freelance" class="hidden fade-in space-y-6">
+                <div class="flex justify-between items-center mb-6">
+                    <div><h2 class="text-2xl font-bold text-white">CRM Agência</h2><p class="text-slate-400 text-sm">Pipeline & Histórico</p></div>
+                    <div class="flex gap-2">
+                        <button onclick="generateColdMail()" class="bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2 rounded-lg text-sm flex items-center gap-2 border border-indigo-400/50"><i class="fas fa-magic"></i> Gerar Script IA</button>
+                        <button onclick="document.getElementById('addClientModal').classList.remove('hidden')" class="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-lg text-sm font-medium"><i class="fas fa-plus"></i> Novo Contrato</button>
+                    </div>
+                </div>
+                
+                <!-- Active Pipeline -->
+                <div class="glass-panel rounded-2xl overflow-hidden mb-6">
+                    <div class="px-6 py-3 border-b border-slate-700/50 bg-slate-800/30 flex justify-between"><span class="text-xs font-bold text-emerald-400 uppercase tracking-wide">Contratos Ativos</span></div>
+                    <table class="w-full text-left border-collapse">
+                        <thead class="bg-slate-800/50 text-xs text-slate-400 uppercase"><tr><th class="px-6 py-3">Cliente</th><th class="px-6 py-3">Início</th><th class="px-6 py-3 text-right">Valor</th><th class="px-6 py-3 text-right">Ações</th></tr></thead>
+                        <tbody id="crmClientList" class="text-sm text-slate-300 divide-y divide-slate-700/50"></tbody>
+                    </table>
+                </div>
+
+                <!-- Churn History (NEW) -->
+                <div class="glass-panel rounded-2xl overflow-hidden border border-slate-700/50">
+                    <div class="px-6 py-3 border-b border-slate-700/50 bg-slate-800/30 flex justify-between"><span class="text-xs font-bold text-slate-400 uppercase tracking-wide">Histórico & Retenção (Churn)</span></div>
+                    <table class="w-full text-left border-collapse">
+                        <thead class="bg-slate-800/50 text-xs text-slate-500 uppercase"><tr><th class="px-6 py-3">Cliente Antigo</th><th class="px-6 py-3">Motivo Saída</th><th class="px-6 py-3 text-right">Duração (Ciclo)</th><th class="px-6 py-3 text-right">LTV Final</th></tr></thead>
+                        <tbody id="crmHistoryList" class="text-sm text-slate-400 divide-y divide-slate-800">
+                            <tr><td colspan="4" class="px-6 py-4 text-center italic text-xs">Nenhum registro histórico encontrado.</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div id="aiCrmOutput" class="hidden glass-panel p-6 rounded-2xl border border-indigo-500/30 bg-indigo-900/20 mt-4 relative">
+                    <button onclick="this.parentElement.classList.add('hidden')" class="absolute top-2 right-4 text-slate-400 hover:text-white"><i class="fas fa-times"></i></button>
+                    <h3 class="text-indigo-300 font-bold mb-2"><i class="fas fa-robot"></i> Script Gemini</h3>
+                    <div id="crmOutputText" class="text-sm text-slate-200 whitespace-pre-wrap leading-relaxed"></div>
+                </div>
+            </div>
+
+            <!-- TAB 4: ENGLISH (RESTORED TO GRID 2x2 LAYOUT) -->
+            <div id="tab-english" class="hidden fade-in space-y-6">
+                <h2 class="text-2xl font-bold text-white mb-6">Jornada Fluência <span class="text-pink-500">English Path</span></h2>
+                <!-- Restored to Grid Layout as per original request -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6" id="englishContainer"></div>
+            </div>
+
+            <!-- TAB 5: SCHEDULE (REVERTED TO CLASSIC TABLE) -->
+            <div id="tab-schedule" class="hidden fade-in space-y-6">
+                <h2 class="text-2xl font-bold text-white mb-6">Protocolo Semanal</h2>
+                
+                <div class="glass-panel p-6 rounded-2xl overflow-x-auto">
+                    <table class="w-full text-center border-collapse text-sm">
+                        <thead>
+                            <tr class="text-slate-400 border-b border-slate-700/50">
+                                <th class="p-4 font-medium">Horário</th>
+                                <th class="p-4 font-medium text-slate-300">Segunda</th>
+                                <th class="p-4 font-medium text-slate-300">Terça</th>
+                                <th class="p-4 font-medium text-slate-300">Quarta</th>
+                                <th class="p-4 font-medium text-slate-300">Quinta</th>
+                                <th class="p-4 font-medium text-slate-300">Sexta</th>
+                            </tr>
+                        </thead>
+                        <tbody class="text-slate-200">
+                            <tr class="border-b border-slate-800/50">
+                                <td class="p-3 text-slate-500 font-mono text-xs">06:00</td>
+                                <td class="p-2"><div class="bg-pink-500/10 text-pink-300 rounded py-2 text-xs font-medium">🇺🇸 Inglês</div></td>
+                                <td class="p-2"><div class="bg-pink-500/10 text-pink-300 rounded py-2 text-xs font-medium">🇺🇸 Inglês</div></td>
+                                <td class="p-2"><div class="bg-pink-500/10 text-pink-300 rounded py-2 text-xs font-medium">🇺🇸 Inglês</div></td>
+                                <td class="p-2"><div class="bg-pink-500/10 text-pink-300 rounded py-2 text-xs font-medium">🇺🇸 Inglês</div></td>
+                                <td class="p-2"><div class="bg-pink-500/10 text-pink-300 rounded py-2 text-xs font-medium">🇺🇸 Inglês</div></td>
+                            </tr>
+                            <tr class="border-b border-slate-800/50">
+                                <td class="p-3 text-slate-500 font-mono text-xs">07:00</td>
+                                <td class="p-2"><div class="bg-blue-500/10 text-blue-300 rounded py-2 text-xs font-medium">🏋️ Treino</div></td>
+                                <td class="p-2"><div class="bg-blue-500/10 text-blue-300 rounded py-2 text-xs font-medium">🏋️ Treino</div></td>
+                                <td class="p-2"><div class="bg-blue-500/10 text-blue-300 rounded py-2 text-xs font-medium">🏋️ Treino</div></td>
+                                <td class="p-2"><div class="bg-blue-500/10 text-blue-300 rounded py-2 text-xs font-medium">🏋️ Treino</div></td>
+                                <td class="p-2"><div class="bg-blue-500/10 text-blue-300 rounded py-2 text-xs font-medium">🏋️ Treino</div></td>
+                            </tr>
+                            <tr class="border-b border-slate-800/50">
+                                <td class="p-3 text-slate-500 font-mono text-xs">09:00</td>
+                                <td class="p-2"><div class="bg-indigo-500/10 text-indigo-300 rounded py-2 text-xs font-medium">🚀 V4 Ops</div></td>
+                                <td class="p-2"><div class="bg-indigo-500/10 text-indigo-300 rounded py-2 text-xs font-medium">🚀 V4 Ops</div></td>
+                                <td class="p-2"><div class="bg-indigo-500/10 text-indigo-300 rounded py-2 text-xs font-medium">🚀 V4 Ops</div></td>
+                                <td class="p-2"><div class="bg-indigo-500/10 text-indigo-300 rounded py-2 text-xs font-medium">🚀 V4 Ops</div></td>
+                                <td class="p-2"><div class="bg-indigo-500/10 text-indigo-300 rounded py-2 text-xs font-medium">🚀 V4 Ops</div></td>
+                            </tr>
+                            <tr class="border-b border-slate-800/50">
+                                <td class="p-3 text-slate-500 font-mono text-xs">14:00</td>
+                                <td class="p-2"><div class="bg-indigo-500/10 text-indigo-300 rounded py-2 text-xs font-medium">📊 V4 Otim</div></td>
+                                <td class="p-2"><div class="bg-indigo-500/10 text-indigo-300 rounded py-2 text-xs font-medium">📊 V4 Otim</div></td>
+                                <td class="p-2"><div class="bg-indigo-500/10 text-indigo-300 rounded py-2 text-xs font-medium">📊 V4 Otim</div></td>
+                                <td class="p-2"><div class="bg-indigo-500/10 text-indigo-300 rounded py-2 text-xs font-medium">📊 V4 Otim</div></td>
+                                <td class="p-2"><div class="bg-slate-700/30 text-slate-400 rounded py-2 text-xs font-medium">🍺 Off</div></td>
+                            </tr>
+                            <tr>
+                                <td class="p-3 text-slate-500 font-mono text-xs">19:00</td>
+                                <td class="p-2"><div class="bg-yellow-500/10 text-yellow-300 rounded py-2 text-xs font-medium">🎓 Estudo</div></td>
+                                <td class="p-2"><div class="bg-emerald-500/10 text-emerald-300 rounded py-2 text-xs font-medium">💰 CRM/Freela</div></td>
+                                <td class="p-2"><div class="bg-yellow-500/10 text-yellow-300 rounded py-2 text-xs font-medium">🎓 Estudo</div></td>
+                                <td class="p-2"><div class="bg-emerald-500/10 text-emerald-300 rounded py-2 text-xs font-medium">💰 CRM/Freela</div></td>
+                                <td class="p-2"></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+             <!-- TAB 6: MENTOR IA -->
+             <div id="tab-mentor" class="hidden fade-in h-[calc(100vh-140px)] flex flex-col">
+                <div class="flex items-center gap-3 mb-4">
+                    <div class="w-10 h-10 rounded-full bg-purple-600 flex items-center justify-center animate-pulse">
+                        <i class="fas fa-brain text-white"></i>
+                    </div>
+                    <div>
+                        <h2 class="text-xl font-bold text-white">Mentor Gemini</h2>
+                        <p class="text-slate-400 text-xs">Estrategista conectado aos seus dados.</p>
+                    </div>
+                </div>
+                <div id="chatHistory" class="flex-1 glass-panel rounded-t-2xl p-6 overflow-y-auto space-y-4 mb-0 border-b-0">
+                    <div class="chat-bubble chat-ai">
+                        Olá, Luan. Sou o <strong>Gemini</strong>, seu estrategista executivo. <br><br>
+                        Analisei seus dados: sua renda atual é <strong><span id="aiSalaryDisplay">R$ 0</span></strong> e você tem <strong><span id="aiClientsDisplay">0</span></strong> clientes ativos.<br>
+                        Como posso ajudar a acelerar sua promoção ou fechar novos contratos hoje?
+                    </div>
+                </div>
+                <div class="glass-panel rounded-b-2xl p-4 border-t-0 flex gap-2 relative">
+                    <input type="text" id="chatInput" placeholder="Pergunte ao Mentor..." class="flex-1 bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-purple-500 transition-colors" onkeypress="if(event.key === 'Enter') sendGeminiMessage()">
+                    <button onclick="sendGeminiMessage()" id="sendBtn" class="bg-purple-600 hover:bg-purple-500 text-white rounded-xl px-6 font-bold transition-colors"><i class="fas fa-paper-plane"></i></button>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Modal Add Client -->
+    <div id="addClientModal" class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center">
+        <div class="glass-panel p-6 rounded-2xl w-full max-w-sm m-4 bg-slate-900">
+            <h3 class="text-xl font-bold text-white mb-4">Novo Cliente</h3>
+            <input type="text" id="clientName" placeholder="Nome" class="w-full bg-slate-800 border border-slate-600 rounded p-2 mb-2 text-white">
+            <input type="number" id="clientValue" placeholder="Valor" class="w-full bg-slate-800 border border-slate-600 rounded p-2 mb-4 text-white">
+            <div class="flex gap-2"><button onclick="document.getElementById('addClientModal').classList.add('hidden')" class="flex-1 py-2 bg-slate-700 rounded text-slate-300">Cancelar</button><button onclick="addClient()" class="flex-1 py-2 bg-emerald-600 rounded text-white font-bold">Salvar</button></div>
+        </div>
+    </div>
+
+    <!-- JAVASCRIPT LOGIC -->
+    <script>
+        const apiKey = "AIzaSyBuhZn9Mcr9lMyl97LenwwGTO5OiXN9uJ8"; 
+        const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
+
+        const CAREER_STEPS = [
+            { id: 'an', title: 'Analista', date: 'Jan 2026', req: 'Inicio', val: 3700, x: 50 },
+            { id: 'jr3', title: 'Júnior L3', date: 'Fev 2026', req: 'NPS > 75 & Zero Erros', val: 4200, x: 150 },
+            { id: 'pl1', title: 'Pleno L1', date: 'Mai 2026', req: 'Google Ads Cert & GA4', val: 4700, x: 300 },
+            { id: 'pl2', title: 'Pleno L2', date: 'Set 2026', req: 'Contas High-Ticket', val: 5350, x: 500 },
+            { id: 'pl3', title: 'Pleno L3', date: 'Dez 2026', req: 'Internacionalização', val: 6000, x: 750 }
+        ];
+        const CERTIFICATIONS_LIST = ["Google Ads Search", "Google Ads Criativos", "Google Ads Shopping", "Intro LinkedIn Ads", "Google Ads Vídeo", "Google Ads Métricas", "Make Foundation"];
+        const GOALS = { totalIncome: 9000, v4Salary: 6000, investment: 22000, freelance: 3000, startWeight: 90, targetWeight: 74 };
+
+        let appData = {
+            profilePic: null, investedAmount: 8500, currentSalary: 3700, 
+            clients: [], churnedClients: [], // Added churned array
+            englishLevels: { a1: true, a2: false, b1: false, b2: false }, certifications: {}, currentWeight: 90
+        };
+
+        function init() {
+            loadData();
+            if (Object.keys(appData.certifications).length === 0) CERTIFICATIONS_LIST.forEach(c => appData.certifications[c] = false);
+            // Init empty churn array if old save
+            if (!appData.churnedClients) appData.churnedClients = [];
+            
+            renderAll();
+            
+            const totalC = appData.clients.reduce((s,c)=>s+c.value, 0) + appData.currentSalary;
+            const salEl = document.getElementById('aiSalaryDisplay');
+            const cliEl = document.getElementById('aiClientsDisplay');
+            if(salEl) salEl.innerText = formatMoney(totalC);
+            if(cliEl) cliEl.innerText = appData.clients.length;
+        }
+
+        // --- CORE ---
+        function loadData() { const saved = localStorage.getItem('luanOS_v92_data'); if (saved) appData = { ...appData, ...JSON.parse(saved) }; }
+        function saveData() { localStorage.setItem('luanOS_v92_data', JSON.stringify(appData)); renderAll(); }
+        function renderAll() { updateDashboard(); renderCareer(); renderCRM(); renderChurnHistory(); renderEnglish(); if(appData.profilePic) document.getElementById('profileDisplay').innerHTML = `<img src="${appData.profilePic}" class="w-full h-full object-cover">`; }
+        function switchTab(id) { document.querySelectorAll('[id^="tab-"]').forEach(el => el.classList.add('hidden')); document.getElementById(`tab-${id}`).classList.remove('hidden'); document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active')); event.currentTarget.classList.add('active'); }
+
+        // --- DASHBOARD ---
+        function updateDashboard() {
+            const freela = appData.clients.reduce((s,c)=>s+c.value,0);
+            const total = appData.currentSalary + freela;
+            document.getElementById('totalIncomeDisplay').innerText = formatMoney(total);
+            document.getElementById('incomeBar').style.width = Math.min(100, (total/GOALS.totalIncome)*100) + '%';
+            document.getElementById('incomePercentage').innerText = Math.round((total/GOALS.totalIncome)*100) + '%';
+            document.getElementById('v4SalaryDisplay').innerText = formatMoney(appData.currentSalary);
+            document.getElementById('v4Bar').style.width = Math.min(100, (appData.currentSalary/GOALS.v4Salary)*100) + '%';
+            document.getElementById('v4Percentage').innerText = Math.round((appData.currentSalary/GOALS.v4Salary)*100) + '%';
+            document.getElementById('investAmount').innerText = formatMoney(appData.investedAmount);
+            document.getElementById('activeClientsCount').innerText = appData.clients.length;
+            document.getElementById('mrrDash').innerText = `MRR: ${formatMoney(freela)}`;
+            const completedCerts = Object.values(appData.certifications).filter(Boolean).length;
+            let promoProb = Math.floor((completedCerts / CERTIFICATIONS_LIST.length) * 0.7 * 100);
+            if(appData.englishLevels.b1) promoProb += 20;
+            const promoEl = document.getElementById('dashPromoChance'); if(promoEl) promoEl.innerText = `${Math.min(100, promoProb)}%`;
+            drawChart(freela); updateWeightUI();
+        }
+        function drawChart(freela) {
+            const mapY = (val) => 230 - (val/10000 * 200); let path = "M 0 230 "; let dots = "";
+            CAREER_STEPS.forEach((s, i) => {
+                const total = s.val + freela; const y = mapY(total); const achieved = appData.currentSalary >= s.val;
+                if(i===0) path = `M ${s.x} ${y}`; else path += ` L ${s.x} ${y}`;
+                dots += `<circle cx="${s.x}" cy="${y}" r="4" fill="${achieved?'#10b981':'#475569'}" stroke="#0f172a" stroke-width="2"><title>${s.title}: ${formatMoney(total)}</title></circle>`;
+            });
+            document.getElementById('incomeTrendLine').setAttribute('d', path); document.getElementById('chartDots').innerHTML = dots;
+        }
+
+        // --- CRM LOGIC (UPDATED) ---
+        function renderCRM() {
+            const list = document.getElementById('crmClientList'); list.innerHTML = '';
+            if (appData.clients.length === 0) { list.innerHTML = '<tr><td colspan="4" class="px-6 py-8 text-center text-slate-500 italic">Nenhum cliente ativo.</td></tr>'; return; }
+            appData.clients.forEach((client, idx) => {
+                const start = new Date(client.startDate);
+                const now = new Date();
+                const diffTime = Math.abs(now - start);
+                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                const dateStr = start.toLocaleDateString('pt-BR');
+                list.innerHTML += `<tr class="hover:bg-slate-800/30 transition-colors group"><td class="px-6 py-4 font-medium text-white">${client.name}</td><td class="px-6 py-4 text-xs text-slate-400">${dateStr} <span class="text-slate-600">(${diffDays} dias)</span></td><td class="px-6 py-4 text-right font-mono text-slate-300">${formatMoney(client.value)}</td><td class="px-6 py-4 text-right"><button onclick="removeClient(${idx})" class="text-slate-500 hover:text-red-400 transition-colors opacity-0 group-hover:opacity-100" title="Encerrar Contrato"><i class="fas fa-user-times"></i></button></td></tr>`;
+            });
+        }
+
+        function renderChurnHistory() {
+            const list = document.getElementById('crmHistoryList'); list.innerHTML = '';
+            if (!appData.churnedClients || appData.churnedClients.length === 0) { list.innerHTML = '<tr><td colspan="4" class="px-6 py-4 text-center italic text-xs text-slate-600">Nenhum registro histórico encontrado.</td></tr>'; return; }
+            
+            appData.churnedClients.forEach(c => {
+                list.innerHTML += `<tr class="hover:bg-slate-800/20"><td class="px-6 py-3 text-slate-400 font-medium">${c.name}</td><td class="px-6 py-3 text-xs text-red-400">${c.exitReason || 'Não informado'}</td><td class="px-6 py-3 text-right text-xs text-slate-500">${c.durationDays} dias</td><td class="px-6 py-3 text-right font-mono text-xs text-slate-600">${formatMoney(c.ltv)}</td></tr>`;
+            });
+        }
+
+        function addClient() {
+            const n = document.getElementById('clientName').value; const v = parseFloat(document.getElementById('clientValue').value);
+            if(n && v) {
+                appData.clients.push({ name: n, value: v, startDate: new Date().toISOString() });
+                document.getElementById('clientName').value = ''; document.getElementById('clientValue').value = '';
+                document.getElementById('addClientModal').classList.add('hidden'); saveData();
+            }
+        }
+
+        function removeClient(idx) {
+            const client = appData.clients[idx];
+            const reason = prompt(`Motivo da saída de ${client.name}? (Ex: Projeto pontual, Sem budget, etc)`);
+            
+            if (reason !== null) { 
+                const endDate = new Date();
+                const startDate = new Date(client.startDate || endDate.toISOString()); 
+                const diffTime = Math.abs(endDate - startDate);
+                const durationDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                const months = Math.max(1, durationDays / 30);
+                const ltv = client.value * months;
+
+                appData.churnedClients.push({
+                    name: client.name,
+                    value: client.value,
+                    startDate: client.startDate,
+                    endDate: endDate.toISOString(),
+                    exitReason: reason || 'Não informado',
+                    durationDays: durationDays,
+                    ltv: ltv
+                });
+
+                appData.clients.splice(idx, 1);
+                saveData();
+            }
+        }
+
+        // --- REST OF FUNCTIONS ---
+        function renderCareer() {
+            const c = document.getElementById('careerStepsContainer'); c.innerHTML = '';
+            CAREER_STEPS.forEach(step => {
+                let btn = '', dot = '', border = '';
+                if (appData.currentSalary > step.val) { dot = 'bg-emerald-500 border-slate-900'; border = 'border-emerald-500/50 bg-slate-800/50'; btn = `<button onclick="promoteTo(${step.val})" class="mt-2 w-full px-3 py-1 bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white text-xs rounded border border-slate-700 transition-colors flex items-center justify-center gap-2"><i class="fas fa-history"></i> Voltar</button>`; } 
+                else if (appData.currentSalary === step.val) { dot = 'bg-emerald-500 border-slate-900 animate-pulse'; border = 'border-emerald-500 bg-emerald-500/10'; btn = `<div class="mt-2 w-full px-3 py-1 bg-emerald-500/20 text-emerald-400 text-xs rounded border border-emerald-500/30 font-bold text-center"><i class="fas fa-check-circle"></i> Atual</div>`; } 
+                else { dot = 'bg-slate-600 border-slate-900'; border = 'hover:bg-slate-800/50'; btn = `<button onclick="promoteTo(${step.val})" class="mt-2 w-full px-3 py-1 bg-indigo-600 hover:bg-indigo-500 text-white text-xs rounded shadow-lg shadow-indigo-900/50 font-bold transition-colors">Promover ⬆</button>`; }
+                c.innerHTML += `<div class="relative pl-10 pt-6 group"><div class="absolute left-0 top-8 w-7 h-7 rounded-full border-2 ${dot} flex items-center justify-center z-10 text-white transition-all text-[10px]">${appData.currentSalary >= step.val ? '<i class="fas fa-check"></i>' : ''}</div><div class="glass-panel p-4 rounded-lg transition-colors ${border}"><div class="flex justify-between"><div><h4 class="font-bold text-white">${step.title}</h4><p class="text-xs text-slate-400">${step.req}</p></div><span class="text-xs text-slate-500">${step.date}</span></div><div class="flex justify-between items-end mt-1"><div class="font-mono text-sm ${appData.currentSalary >= step.val ? 'text-emerald-400' : 'text-indigo-300'}">${formatMoney(step.val)}</div>${btn}</div></div></div>`;
+            });
+            const cc = document.getElementById('certContainer'); cc.innerHTML = '';
+            CERTIFICATIONS_LIST.forEach(cert => { cc.innerHTML += `<label class="flex items-center gap-2 p-2 rounded hover:bg-slate-800 cursor-pointer"><input type="checkbox" ${appData.certifications[cert]?'checked':''} onchange="toggleCert('${cert}')" class="accent-indigo-500"><span class="text-xs text-slate-300">${cert}</span></label>`; });
+        }
+        function promoteTo(val) { val = parseFloat(val); if(val === appData.currentSalary) return; const type = val > appData.currentSalary ? "PROMOVER" : "VOLTAR"; if(confirm(`${type} salário para ${formatMoney(val)}?`)) { appData.currentSalary = val; saveData(); } }
+        function changeWeight(d) { appData.currentWeight = Math.round((appData.currentWeight + d)*10)/10; saveData(); }
+        function updateWeightUI() { document.getElementById('weightDisplay').innerText = appData.currentWeight.toFixed(1); const p = Math.max(0, Math.min(100, ((GOALS.startWeight - appData.currentWeight) / (GOALS.startWeight - GOALS.targetWeight)) * 100)); document.getElementById('weightBar').style.width = p + '%'; document.getElementById('weightPct').innerText = Math.round(p) + '%'; }
+        function toggleCert(cert) { appData.certifications[cert] = !appData.certifications[cert]; saveData(); }
+        function formatMoney(v) { return v.toLocaleString('pt-BR', {style:'currency', currency:'BRL'}); }
+        function addInvest() { const v = parseFloat(document.getElementById('investInput').value); if(v){ appData.investedAmount+=v; document.getElementById('investInput').value=''; saveData();}}
+        function addClient() { const n=document.getElementById('clientName').value; const v=parseFloat(document.getElementById('clientValue').value); if(n&&v){ appData.clients.push({name:n, value:v}); document.getElementById('addClientModal').classList.add('hidden'); saveData();}}
+        
+        function renderEnglish() {
+            const levels = [
+                {k:'a1', t:'Básico (A1)', d:'Vocabulário & Frases'},
+                {k:'a2', t:'Elementar (A2)', d:'Rotinas e Passado'},
+                {k:'b1', t:'Intermediário (B1)', d:'Técnico & Leitura'},
+                {k:'b2', t:'Fluente (B2)', d:'Conversação Real'}
+            ];
+            const container = document.getElementById('englishContainer');
+            if(container) {
+                container.innerHTML = levels.map(l => 
+                    `<label class="glass-panel p-6 rounded-2xl cursor-pointer hover:bg-slate-800 transition-colors flex justify-between items-center group relative border border-transparent hover:border-pink-500/30">
+                        <div class="flex items-center gap-4">
+                            <div class="w-12 h-12 rounded-lg bg-pink-500/10 flex items-center justify-center text-pink-400 text-xl font-bold">${l.t.split(' ')[1].replace('(','').replace(')','')}</div>
+                            <div>
+                                <h3 class="font-bold text-white text-lg group-hover:text-pink-400 transition-colors">${l.t}</h3>
+                                <p class="text-sm text-slate-400">${l.d}</p>
+                            </div>
+                        </div>
+                        <input type="checkbox" id="eng-${l.k}" ${appData.englishLevels[l.k]?'checked':''} onchange="updateEnglish('${l.k}')" class="w-6 h-6 rounded border-slate-600 text-pink-500 focus:ring-pink-500 bg-slate-800">
+                    </label>`
+                ).join('');
+            }
+            updateEnglishDashboardDisplay();
+        }
+
+        function updateEnglish(levelKey) {
+             appData.englishLevels[levelKey] = document.getElementById(`eng-${levelKey}`).checked;
+             saveData();
+             updateEnglishDashboardDisplay();
+        }
+
+        function updateEnglishUI() {
+            renderEnglish();
+        }
+        
+        function updateEnglishDashboardDisplay() {
+            let highest = 'Start';
+            let next = 'A1';
+            if (appData.englishLevels.a1) { highest = 'A1'; next = 'A2'; }
+            if (appData.englishLevels.a2) { highest = 'A2'; next = 'B1'; }
+            if (appData.englishLevels.b1) { highest = 'B1'; next = 'B2'; }
+            if (appData.englishLevels.b2) { highest = 'B2'; next = 'Fluente'; }
+            
+            const levelDisplay = document.getElementById('dashEnglishLevel');
+            if(levelDisplay) levelDisplay.innerText = highest;
+            
+            const nextDisplay = document.getElementById('dashEnglishNext');
+            if(nextDisplay) nextDisplay.innerText = `Próximo: ${next}`;
+        }
+
+        function uploadProfile(i) { if(i.files[0]) { const r=new FileReader(); r.onload=(e)=>{appData.profilePic=e.target.result;saveData()}; r.readAsDataURL(i.files[0]); } }
+        async function sendGeminiMessage() { const input = document.getElementById('chatInput'); const msg = input.value.trim(); if(!msg) return; const h = document.getElementById('chatHistory'); h.innerHTML += `<div class="chat-bubble chat-user">${msg}</div>`; input.value = ''; try { const prompt = `Sou Mentor de carreira. Dados user: Salário ${appData.currentSalary}, Peso ${appData.currentWeight}. Pergunta: ${msg}. Responda curto e motivador.`; const res = await fetch(API_URL, {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({contents:[{parts:[{text:prompt}]}]})}); const data = await res.json(); const reply = data.candidates[0].content.parts[0].text.replace(/\*\*(.*?)\*\*/g, '<b>$1</b>'); h.innerHTML += `<div class="chat-bubble chat-ai">${reply}</div>`; } catch(e) { h.innerHTML += `<div class="chat-bubble chat-ai">Erro ao conectar com IA.</div>`; } h.scrollTop = h.scrollHeight; }
+        async function generateColdMail() { const out = document.getElementById('crmOutputText'); document.getElementById('aiCrmOutput').classList.remove('hidden'); out.innerText = "Gerando..."; try { const res = await fetch(API_URL, {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({contents:[{parts:[{text:"Crie um cold mail curto para vender tráfego pago para e-commerces."}]}]})}); const data = await res.json(); out.innerText = data.candidates[0].content.parts[0].text; } catch(e) { out.innerText = "Erro na IA."; } }
+        function exportData() { const d = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(appData)); const a = document.createElement('a'); a.href = d; a.download = "LuanOS_Backup.json"; a.click(); }
+        function importData(i) { const f = i.files[0]; if(f) { const r = new FileReader(); r.onload = (e) => { appData = JSON.parse(e.target.result); saveData(); location.reload(); }; r.readAsText(f); } }
+        init();
+    </script>
+</body>
+</html>
